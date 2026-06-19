@@ -1,0 +1,43 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.venv/
+venv/
+env/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Data files
+data/landing/*
+data/raw/*
+data/cleaned/*
+data/curated/*
+data/analytics/*
+
+# Keep folder structure
+!data/landing/.gitkeep
+!data/raw/.gitkeep
+!data/cleaned/.gitkeep
+!data/curated/.gitkeep
+!data/analytics/.gitkeep
+
+# Environment variables
+.env
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+.terraform.lock.hcl
+
+# AWS
+.aws/
+*.pem
+
+# OS / IDE
+.DS_Store
+.vscode/
+.idea/
