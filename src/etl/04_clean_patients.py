@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from pyspark.sql.functions import col, upper, trim, when, to_date, coalesce 
+from pyspark.sql.functions import col, upper, trim, when, to_date, coalesce, lit 
 
 from src.utils.spark_session import create_spark_session
 
@@ -9,6 +9,8 @@ BASE_DIR = Path(__file__).resolve().parents[2]
 
 RAW_PATIENTS_PATH = BASE_DIR / "data" / "raw" / "patients"
 CLEANED_PATIENTS_PATH = BASE_DIR / "data" / "cleaned" / "patients"
+DATA_QUALITY_PATIENTS_PATH = BASE_DIR / "data" / "data_quality" / "patients_issues"
+
 
 
 def main() -> None:
@@ -92,7 +94,53 @@ def main() -> None:
     )
 
     print(f"Cleaned patients written to: {CLEANED_PATIENTS_PATH}")
+
+    
+    duplicate_patient_issues_df = (
+    cleaned_patients_df
+    .groupBy("patient_id")
+    .count()
+    .filter(col("count") > 1)
+    .select(
+        lit("patients").alias("dataset_name"),
+        col("patient_id").alias("record_id"),
+        lit("patient_id").alias("field_name"),
+        lit("DUPLICATE_RECORD").alias("issue_type"),
+        lit("Duplicate patient_id detected").alias("issue_description"),
+        lit("HIGH").alias("severity")
+        )
+    )
   
+    missing_birth_year_issues_df = (
+        cleaned_patients_df
+        .filter(col("birth_year").isNull())
+        .select(
+            lit("patients").alias("dataset_name"),
+            col("patient_id").alias("record_id"),
+            lit("birth_year").alias("field_name"),
+            lit("MISSING_VALUE").alias("issue_type"),
+            lit("Missing birth_year value").alias("issue_description"),
+            lit("MEDIUM").alias("severity")
+        )
+    )
+
+    data_quality_issues_df = duplicate_patient_issues_df.unionByName(
+    missing_birth_year_issues_df
+    )
+
+
+    (
+        data_quality_issues_df.write
+        .mode("overwrite")
+        .parquet(str(DATA_QUALITY_PATIENTS_PATH))
+    )
+
+    print(f"Patient data quality issues written to: {DATA_QUALITY_PATIENTS_PATH}")
+
+    print("Data quality issues summary:")
+    data_quality_issues_df.groupBy("issue_type", "severity").count().show(truncate=False)
+
+
 
 
     spark.stop()

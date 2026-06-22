@@ -41,3 +41,8 @@ data/analytics/*
 .DS_Store
 .vscode/
 .idea/
+
+
+# Data quality
+data/data_quality/*
+!data/data_quality/.gitkeep
